@@ -1,5 +1,5 @@
 # Compiler
-CC = clang
+CC = gcc
 
 # Flags
 CFLAGS = -Wall -Wextra -std=c99 -pedantic
@@ -55,7 +55,7 @@ release: CFLAGS += -Os
 release: $(BIN)
 
 $(BIN): $(OBJ)
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDFLAGS)
 
 # Tests rules
 test-crypto: $(TEST_CRYPTO_OBJS)

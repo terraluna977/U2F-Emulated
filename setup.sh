@@ -14,3 +14,6 @@ openssl req -new -x509 -key keys/prime256v1-key.pem -out keys/server.pem -days 7
 
 # AES entropy bits
 head -c 48 /dev/random > keys/aes-key
+
+# initialize the counter - 8 digit hex number
+echo 1 > keys/counter

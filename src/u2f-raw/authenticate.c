@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "frame.h"
 #include "raw_message.h"
@@ -46,10 +48,19 @@ static void authenticate_response_counter(struct message *response,
     uint8_t counter_buffer[sizeof(uint32_t)];
 
     /* Fill it */
+#if 0
     counter_buffer[0] = counter & 0xFF;
     counter_buffer[1] = (counter >> 8) & 0xFF;
     counter_buffer[2] = (counter >> 16) & 0xFF;
     counter_buffer[3] = (counter >> 24) & 0xFF;
+#else
+    counter_buffer[3] = counter & 0xFF;
+    counter_buffer[2] = (counter >> 8) & 0xFF;
+    counter_buffer[1] = (counter >> 16) & 0xFF;
+    counter_buffer[0] = (counter >> 24) & 0xFF;
+#endif
+
+
 
     /* Add to response */
     message_add_data(response, counter_buffer, sizeof(uint32_t));
@@ -97,10 +108,18 @@ static void authenticate_response_signature(struct message *response,
     /* Counter */
     uint8_t counter_buffer[sizeof(uint32_t)];
     /* Fill it */
+#if 0
     counter_buffer[0] = counter & 0xFF;
     counter_buffer[1] = (counter >> 8) & 0xFF;
     counter_buffer[2] = (counter >> 16) & 0xFF;
     counter_buffer[3] = (counter >> 24) & 0xFF;
+#else
+    counter_buffer[3] = counter & 0xFF;
+    counter_buffer[2] = (counter >> 8) & 0xFF;
+    counter_buffer[1] = (counter >> 16) & 0xFF;
+    counter_buffer[0] = (counter >> 24) & 0xFF;
+#endif
+
     /* Add it */
     memcpy(buffer_to_sign + index,
         counter_buffer,
@@ -369,14 +388,39 @@ static struct message *raw_authenticate_enforce(
     authenticate_response_user_pre(response, true);
 
     /* Counter */
-    authenticate_response_counter(response, 1);
+    uint32_t counter = 1;
+
+    int fd = open("keys/counter", O_RDWR);
+    if (fd < 0)
+    {
+        warn("keys/counter is missing, using 0x%x", counter);
+    }
+    else
+    {
+         char buffer[16];
+         ssize_t io = read(fd, buffer, sizeof(buffer) - 1);
+         if (io >= 0)
+         {
+                buffer[io] = '\0';
+                int parsed = sscanf(buffer, "%x", &counter);
+                if (parsed != 1)
+                {
+                      counter = 1;
+                }
+         }
+         lseek(fd, 0, SEEK_SET);
+         snprintf(buffer, sizeof(buffer) - 1, "%x", counter + 1);
+         io = write(fd, buffer, strlen(buffer));
+         close(fd);
+    }
+    authenticate_response_counter(response, counter);
 
     /* Signature */
     authenticate_response_signature(response,
         key,
         &params,
         1,
-        1);
+        counter);
 
     /* SW */
     authenticate_response_sw(response, SW_NO_ERROR);
