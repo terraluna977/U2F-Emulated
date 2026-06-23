@@ -17,3 +17,10 @@ head -c 48 /dev/random > keys/aes-key
 
 # initialize the counter - 8 digit hex number
 echo 1 > keys/counter
+
+# 1. Generate the private key
+openssl ecparam -name prime256v1 -genkey -noout -out keys/attestation_key.pem
+
+# 2. Generate the certificate (DER format is expected by d2i_X509_fp)
+openssl req -new -x509 -key keys/attestation_key.pem -out keys/attestation_cert.crt -days 365 -subj "/CN=U2F-Emulated-Attestation"
+openssl x509 -in keys/attestation_cert.crt -outform DER -out keys/attestation_cert.der

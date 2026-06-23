@@ -1,6 +1,6 @@
-#include <criterion/criterion.h>
+//#include <criterion/criterion.h>
 
-#include "crypto.h"
+#include "../src/crypto.h"
 
 
 Test(hash, hash_0)

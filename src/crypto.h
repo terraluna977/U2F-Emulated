@@ -1,8 +1,9 @@
 #ifndef CRYPTO_H
 #define CRYPTO_H
 
-#include <openssl/ec.h>
-
+#include <stdint.h>
+#include <stddef.h>
+#include <openssl/evp.h> /* Replaces openssl/ec.h */
 
 /**
 ** \brief Hash data using sha256
@@ -13,38 +14,30 @@
 ** \return The size of the hash
 */
 size_t crypto_hash(const void *data, size_t data_len,
-        unsigned char **hash);
+                   uint8_t **hash);
 
 /**
 ** \brief Generate an ec pair key
 **
 ** \return The generated ec pair key
 */
-EC_KEY *crypto_ec_generate_key(void);
+EVP_PKEY *crypto_ec_generate_key(void);
 
 /**
-** \brief Get the pem reprensentation of a private key
+** \brief Get the pem representation of a private key
 **
 ** \param privkey The private key
 ** \return The pem representation
 */
-char *crypto_ec_privkey_to_pem(EC_KEY *privkey);
+char *crypto_ec_privkey_to_pem(EVP_PKEY *privkey);
 
 /**
-** \brief Get the pem reprensentation of a public key
+** \brief Get the pem representation of a public key
 **
 ** \param pubkey The public key
 ** \return The pem representation
 */
-char *crypto_ec_pubkey_to_pem(EC_KEY *pubkey);
-
-/**
-** \brief Get the public key from the private key
-**
-** \param privkey the privkey
-** \return The public key
-*/
-EC_KEY *crypto_ec_pubkey_from_priv(EC_KEY *privkey);
+char *crypto_ec_pubkey_to_pem(EVP_PKEY *pubkey);
 
 /**
 ** \brief Get the public ec key bytes
@@ -53,8 +46,8 @@ EC_KEY *crypto_ec_pubkey_from_priv(EC_KEY *privkey);
 ** \param buffer The buffer use to put the bytes
 ** \return The size of the buffer
 */
-size_t crypto_ec_pubkey_to_bytes(const EC_KEY *key,
-    unsigned char **buffer);
+size_t crypto_ec_pubkey_to_bytes(const EVP_PKEY *key,
+                                 uint8_t **buffer);
 
 /**
 ** \brief Get the ec key bytes
@@ -63,7 +56,8 @@ size_t crypto_ec_pubkey_to_bytes(const EC_KEY *key,
 ** \param buffer The buffer use to put the bytes
 ** \return The size of the buffer
 */
-int crypto_ec_key_to_bytes(EC_KEY *key, unsigned char **buffer);
+size_t crypto_ec_key_to_bytes(const EVP_PKEY *key, 
+                              uint8_t **buffer);
 
 /**
 ** \brief Get the ec key from ec key bytes
@@ -72,8 +66,8 @@ int crypto_ec_key_to_bytes(EC_KEY *key, unsigned char **buffer);
 ** \param size The size of the buffer
 ** \return The ec key
 */
-EC_KEY *crypto_ec_bytes_to_key(const unsigned char *buffer,
-    long size);
+EVP_PKEY *crypto_ec_bytes_to_key(const uint8_t *buffer,
+                                 size_t size);
 
 /**
 ** \brief Sign a digest with a specific key
@@ -84,22 +78,22 @@ EC_KEY *crypto_ec_bytes_to_key(const unsigned char *buffer,
 ** \param signature The ref buffer to put the signature
 ** \return The size of the signature, 0 on error
 */
-unsigned int crypto_ec_sign_with_key(EC_KEY *key,
-    const unsigned char *digest,
-    int digest_len,
-    unsigned char **signature);
+size_t crypto_ec_sign_with_key(EVP_PKEY *key,
+                               const uint8_t *digest,
+                               size_t digest_len,
+                               uint8_t **signature);
 
 /**
-** \brief Sign a digest
+** \brief Sign a digest using the global attestation key
 **
 ** \param digest The digest
 ** \param digest_len The digest length
 ** \param signature The ref buffer to put the signature
 ** \return The size of the signature, 0 on error
 */
-unsigned int crypto_ec_sign(const unsigned char *digest,
-    int digest_len,
-    unsigned char **signature);
+size_t crypto_ec_sign(const uint8_t *digest,
+                      size_t digest_len,
+                      uint8_t **signature);
 
 /**
 ** \brief Encrypt data using aes
@@ -109,8 +103,8 @@ unsigned int crypto_ec_sign(const unsigned char *digest,
 ** \param buffer The resulting buffer where cipher data is put
 ** \return The size of the buffer
 */
-size_t crypto_aes_encrypt(const unsigned char *data, int data_len,
-        unsigned char **buffer);
+size_t crypto_aes_encrypt(const uint8_t *data, size_t data_len,
+                          uint8_t **buffer);
 
 /**
 ** \brief Decrypt data using aes
@@ -120,8 +114,8 @@ size_t crypto_aes_encrypt(const unsigned char *data, int data_len,
 ** \param buffer The resulting buffer where clear data is put
 ** \return The size of the buffer
 */
-size_t crypto_aes_decrypt(const unsigned char *data, int size,
-        unsigned char **buffer);
+size_t crypto_aes_decrypt(const uint8_t *data, size_t size,
+                          uint8_t **buffer);
 
 /**
 ** \brief Get the X509 attestation bytes
@@ -129,16 +123,16 @@ size_t crypto_aes_decrypt(const unsigned char *data, int size,
 ** \param buffer The buffer to put the bytes
 ** \return The buffer length
 */
-int crypto_x509_get_bytes(unsigned char **buffer);
+size_t crypto_x509_get_bytes(uint8_t **buffer);
 
 /**
 ** \brief Setup all the crypto stuffs
 */
-int crypto_setup(void);
+void crypto_setup(void);
 
 /**
 ** \brief Release all the crypto stuffs
 */
 void crypto_release(void);
 
-#endif
+#endif /* CRYPTO_H */
