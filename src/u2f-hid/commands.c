@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h> // Added for standard endian conversions
 
 #include "commands.h"
 
@@ -65,7 +66,10 @@ static struct message *cmd_init_handler(
         const struct message *request)
 {
     /* Log */
-    fprintf(stderr, "   Init\n");
+    //fprintf(stderr, "   Init\n");
+    fprintf(stderr, "   Init: CID=0x%08x, BCNT=%d\n",
+            request->init_packet->cid,
+            packet_init_get_bcnt(request->init_packet));
 
     /* Check message size*/
     if (packet_init_get_bcnt(request->init_packet)
@@ -82,7 +86,10 @@ static struct message *cmd_init_handler(
     /* Fill payload */
     memcpy(payload->nonce, request->init_packet->data,
         U2FHID_INIT_BCNT);
+
     payload->cid = 2;
+    // CID must be Big-Endian
+    //payload->cid = htonl(2);
     payload->protocol_ver = PROTOCOL_VERSION;
     payload->maj_dev_ver = MAJ_DEV_VERSION;
     payload->min_dev_ver = MIN_DEV_VERSION;
@@ -120,7 +127,10 @@ static struct message *cmd_msg_handler(
     const struct message *request)
 {
     /* Log */
-    fprintf(stderr, "   Msg\n");
+    fprintf(stderr, "   Msg: CID=0x%08x, BCNT=%d\n",
+            request->init_packet->cid,
+            packet_init_get_bcnt(request->init_packet));
+
     return raw_msg_handler(request);
 }
 
@@ -233,6 +243,8 @@ struct message *cmd_process(const struct message *request)
         packet_init_get_bcnt(request->init_packet);
     uint8_t *request_buffer = malloc(request_buffer_size);
     message_read(request, request_buffer, 0, request_buffer_size);
+    fprintf(stderr, "   Cmd process:: CID=0x%08x, CMD=0x%02x\n",
+            request->init_packet->cid, request->init_packet->cmd);
     dump_bytes("Message IN:", request_buffer, request_buffer_size);
 
 
@@ -244,5 +256,6 @@ struct message *cmd_process(const struct message *request)
     /* Handle it */
     struct message *response = handler(request);
 
+    free(request_buffer);
     return response;
 }

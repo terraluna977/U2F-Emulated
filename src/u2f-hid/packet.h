@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
+#include <arpa/inet.h>
 
 /* Packed macroyy */
 #define __packed __attribute__((__packed__))
@@ -53,6 +53,7 @@ struct packet_cont
 */
 static inline uint32_t packet_get_cid(const void *packet)
 {
+//    return ntohl(*((uint32_t *)packet));
     return *((uint32_t *)packet);
 }
 
